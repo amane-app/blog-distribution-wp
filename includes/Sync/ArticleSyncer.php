@@ -52,8 +52,9 @@ class ArticleSyncer
             }
 
             $existing = new \WP_Query([
-                'post_type'  => 'post',
-                'meta_query' => [
+                'post_type'   => 'post',
+                'post_status' => 'any',
+                'meta_query'  => [
                     [
                         'key'   => '_amane_article_id',
                         'value' => $articleId,
