@@ -19,8 +19,10 @@ class ArticleSyncer
     {
         $result = new SyncResult();
 
-        $apiUrl      = (string) get_option('amane_api_url', 'https://service.amane.app/api/v1');
-        $apiToken    = (string) get_option('amane_api_token', '');
+        // trim() で前後空白・改行 (CRLF) を除去 (= 旧プラグイン版で
+        // 保存された option に \r\n が混入している場合の防御)
+        $apiUrl      = trim((string) get_option('amane_api_url', 'https://service.amane.app'));
+        $apiToken    = trim((string) get_option('amane_api_token', ''));
         $autoPublish = (bool)   get_option('amane_auto_publish', false);
         $category    = (int)    get_option('amane_post_category', 0);
         $author      = (int)    get_option('amane_post_author', 1);

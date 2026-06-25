@@ -1,15 +1,9 @@
 {
     "name": "amane/blog-distribution-wp",
     "require": {
-        "php": "^8.1",
-        "amane/blog-sdk": "^0.1"
+        "php": "^7.4 || ^8.0",
+        "amane/blog-sdk": "^0.1.2"
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../sdk-php"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Amane\\WpPlugin\\": "includes/"

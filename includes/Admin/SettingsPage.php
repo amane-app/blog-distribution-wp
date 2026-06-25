@@ -19,25 +19,38 @@ class SettingsPage
             self::PAGE_SLUG,
         );
 
-        register_setting(self::OPTION_GROUP, 'amane_api_url', ['type' => 'string']);
+        register_setting(self::OPTION_GROUP, 'amane_api_url', [
+            'type'              => 'string',
+            // 前後の空白・改行を保存時に除去 (= base_uri 組立て事故防止)
+            'sanitize_callback' => static fn ($v) => trim((string) $v),
+        ]);
         add_settings_field(
             'amane_api_url',
             __('API URL', 'amane-blog-dist'),
             function (): void {
-                $value = esc_attr((string) get_option('amane_api_url', 'https://service.amane.app/api/v1'));
+                // SDK >= 0.1.2 は baseUrl 末尾に /api/v1 が無くても自動付与するため、
+                // 'https://service.amane.app' でも 'https://service.amane.app/api/v1' でも動作する。
+                // デフォルトは記述が短くて済む形に統一。
+                $value = esc_attr((string) get_option('amane_api_url', 'https://service.amane.app'));
                 echo "<input type='text' name='amane_api_url' value='{$value}' class='regular-text' />";
+                echo '<p class="description">' . esc_html__('例: https://service.amane.app ( /api/v1 は SDK が自動付与します)', 'amane-blog-dist') . '</p>';
             },
             self::PAGE_SLUG,
             'amane_api_section',
         );
 
-        register_setting(self::OPTION_GROUP, 'amane_api_token', ['type' => 'string']);
+        register_setting(self::OPTION_GROUP, 'amane_api_token', [
+            'type'              => 'string',
+            // 前後の空白・改行 (CRLF) を保存時に除去 (= Authorization ヘッダ壊れ防止)
+            'sanitize_callback' => static fn ($v) => trim((string) $v),
+        ]);
         add_settings_field(
             'amane_api_token',
             __('API トークン', 'amane-blog-dist'),
             function (): void {
                 $value = esc_attr((string) get_option('amane_api_token', ''));
                 echo "<input type='password' name='amane_api_token' value='{$value}' class='regular-text' autocomplete='off' />";
+                echo '<p class="description">' . esc_html__('amb_ で始まる平文トークン。AMANE 管理画面 → サイト詳細 → 「📝 ブログ配信」タブから発行', 'amane-blog-dist') . '</p>';
             },
             self::PAGE_SLUG,
             'amane_api_section',
