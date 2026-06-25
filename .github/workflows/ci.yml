@@ -49,6 +49,8 @@ jobs:
           extensions: mysqli, pdo_mysql
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
+      - name: Install subversion (required by install-wp-tests.sh)
+        run: sudo apt-get update && sudo apt-get install -y subversion
       - name: Install WP test suite
         run: |
           chmod +x bin/install-wp-tests.sh
@@ -62,6 +64,13 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+      - name: Install plugin runtime deps (wp-env mounts vendor/)
+        run: composer install --no-dev --prefer-dist --no-progress
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
