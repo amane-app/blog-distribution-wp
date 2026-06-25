@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Amane\WpPlugin\Sync;
 
-use Amane\BlogSdk\AmaneClient;
+use Amane\WpPlugin\Sdk\ClientFactory;
 
 class SyncResult
 {
@@ -15,6 +15,15 @@ class SyncResult
 
 class ArticleSyncer
 {
+    private ClientFactory $clientFactory;
+
+    public function __construct(?ClientFactory $clientFactory = null)
+    {
+        // 未指定時はフィルタ経由で既定生成（E2E では mu-plugin で差し替え可能）
+        $this->clientFactory = $clientFactory
+            ?? apply_filters('amane_blog_client_factory', new ClientFactory());
+    }
+
     public function sync(): SyncResult
     {
         $result = new SyncResult();
@@ -33,7 +42,7 @@ class ArticleSyncer
         }
 
         try {
-            $client   = AmaneClient::make($apiUrl, $apiToken);
+            $client   = $this->clientFactory->make($apiUrl, $apiToken);
             $response = $client->articles()->list(['status' => 'completed']);
         } catch (\Throwable $e) {
             $result->errors[] = 'Failed to fetch articles: ' . $e->getMessage();
@@ -49,7 +58,6 @@ class ArticleSyncer
                 continue;
             }
 
-            // Check for existing WP post with this AMANE article ID
             $existing = new \WP_Query([
                 'post_type'  => 'post',
                 'meta_query' => [
