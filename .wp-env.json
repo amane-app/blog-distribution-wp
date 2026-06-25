@@ -1,0 +1,10 @@
+{
+  "core": "WordPress/WordPress#master",
+  "plugins": ["."],
+  "mappings": {
+    "wp-content/mu-plugins/amane-e2e-fake.php": "./tests/e2e-mu-plugin/amane-e2e-fake.php"
+  },
+  "config": {
+    "WP_DEBUG": true
+  }
+}

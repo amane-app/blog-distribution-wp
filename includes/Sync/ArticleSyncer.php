@@ -8,9 +8,13 @@ use Amane\WpPlugin\Sdk\ClientFactory;
 
 class ArticleSyncer
 {
-    private ClientFactory $clientFactory;
+    /** @var ClientFactory|object */
+    private object $clientFactory;
 
-    public function __construct(?ClientFactory $clientFactory = null)
+    /**
+     * @param ClientFactory|object|null $clientFactory
+     */
+    public function __construct($clientFactory = null)
     {
         // 未指定時はフィルタ経由で既定生成（E2E では mu-plugin で差し替え可能）
         $this->clientFactory = $clientFactory

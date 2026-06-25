@@ -12,7 +12,8 @@ class Plugin
 {
     private const CRON_HOOK = 'amane_sync_articles';
 
-    private ClientFactory $clientFactory;
+    /** @var ClientFactory|object */
+    private object $clientFactory;
     private ?ArticleSyncer $syncer;
 
     public function __construct(?ClientFactory $clientFactory = null, ?ArticleSyncer $syncer = null)
