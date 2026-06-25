@@ -59,13 +59,14 @@ jobs:
   e2e:
     name: E2E (Playwright + wp-env)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Install npm deps
-        run: npm ci || npm install
+        run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       - name: Start wp-env

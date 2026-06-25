@@ -62,5 +62,9 @@ final class ArticleSyncIntegrationTest extends WP_UnitTestCase
         self::assertSame(1, $result->created);
         $posts = get_posts(['post_type' => 'post', 'post_status' => 'publish', 'numberposts' => -1]);
         self::assertCount(1, $posts);
+
+        $reported = $factory->articlesResource()->reported;
+        self::assertCount(1, $reported);
+        self::assertSame('a2', $reported[0][0]);
     }
 }

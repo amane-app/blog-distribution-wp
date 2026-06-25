@@ -69,4 +69,9 @@ final class FakeClientFactory extends ClientFactory
     {
         return new FakeClient($this->articles);
     }
+
+    public function articlesResource(): FakeArticlesResource
+    {
+        return $this->articles;
+    }
 }

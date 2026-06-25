@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 
 test('同期フックでフェイク記事から下書きが生成される', async ({ page }) => {
   // トークン設定 → cron フック実行（フェイク SDK が記事を返す）
-  execSync('npx wp-env run cli wp option update amane_api_token amb_e2e_token', { stdio: 'inherit' });
+  execSync('npx wp-env run cli wp option update amane_api_token amb_e2e_token', { stdio: 'inherit', timeout: 60_000 });
 
   // Windows と Linux 両対応: PHP eval の引用符をダブルクォートで統一
   execSync(
@@ -12,6 +12,7 @@ test('同期フックでフェイク記事から下書きが生成される', as
       stdio: 'inherit',
       // Windows では shell: true でシェル経由実行が必要な場合がある
       shell: process.platform === 'win32',
+      timeout: 60_000,
     },
   );
 
