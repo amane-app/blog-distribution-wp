@@ -8,7 +8,7 @@
 declare(strict_types=1);
 
 add_filter('amane_blog_client_factory', static function () {
-    return new class {
+    return new class extends \Amane\WpPlugin\Sdk\ClientFactory {
         public function make(string $url, string $token): object
         {
             return new class {
@@ -21,12 +21,10 @@ add_filter('amane_blog_client_factory', static function () {
                                 (object) ['id' => 'e2e-1', 'title' => 'E2E Sample Article'],
                             ]];
                         }
-
                         public function get(string $id): object
                         {
                             return (object) ['body_html' => '<p>E2E body for ' . $id . '</p>'];
                         }
-
                         public function reportPublication(string $id, string $url): void
                         {
                         }
