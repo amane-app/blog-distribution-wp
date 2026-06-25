@@ -6,13 +6,6 @@ namespace Amane\WpPlugin\Sync;
 
 use Amane\WpPlugin\Sdk\ClientFactory;
 
-class SyncResult
-{
-    public int   $created = 0;
-    public int   $skipped = 0;
-    public array $errors  = [];
-}
-
 class ArticleSyncer
 {
     private ClientFactory $clientFactory;

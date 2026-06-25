@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 namespace Amane\WpPlugin;
 
-use Amane\BlogSdk\AmaneClient;
 use Amane\WpPlugin\Admin\SettingsPage;
+use Amane\WpPlugin\Sdk\ClientFactory;
 use Amane\WpPlugin\Sync\ArticleSyncer;
 
 class Plugin
 {
     private const CRON_HOOK = 'amane_sync_articles';
+
+    private ClientFactory $clientFactory;
+    private ?ArticleSyncer $syncer;
+
+    public function __construct(?ClientFactory $clientFactory = null, ?ArticleSyncer $syncer = null)
+    {
+        $this->clientFactory = $clientFactory
+            ?? apply_filters('amane_blog_client_factory', new ClientFactory());
+        $this->syncer = $syncer;
+    }
 
     public function register(): void
     {
@@ -45,7 +55,7 @@ class Plugin
 
     public function runSync(): void
     {
-        $syncer = new ArticleSyncer();
+        $syncer = $this->syncer ?? new ArticleSyncer($this->clientFactory);
         $result = $syncer->sync();
 
         error_log(sprintf(
@@ -81,7 +91,7 @@ class Plugin
         }
 
         try {
-            $client = AmaneClient::make($apiUrl, $apiToken);
+            $client = $this->clientFactory->make($apiUrl, $apiToken);
             $client->articles()->reportPublication($articleId, get_permalink($post->ID) ?: '');
         } catch (\Throwable $e) {
             error_log('AMANE reportPublication failed: ' . $e->getMessage());
