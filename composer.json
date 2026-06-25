@@ -4,9 +4,41 @@
         "php": "^7.4 || ^8.0",
         "amane/blog-sdk": "^0.1.2"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "brain/monkey": "^2.6",
+        "mockery/mockery": "^1.6",
+        "yoast/phpunit-polyfills": "^1.1",
+        "phpunit/phpcov": "^8.2"
+    },
     "autoload": {
         "psr-4": {
             "Amane\\WpPlugin\\": "includes/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Amane\\WpPlugin\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": [
+            "@test:unit"
+        ],
+        "test:unit": "phpunit -c phpunit.xml.dist",
+        "test:integration": "phpunit -c phpunit-integration.xml.dist",
+        "test:cov": [
+            "@php -r \"is_dir('build/cov') || mkdir('build/cov', 0777, true);\"",
+            "phpunit -c phpunit.xml.dist --coverage-php build/cov/unit.cov",
+            "phpunit -c phpunit-integration.xml.dist --coverage-php build/cov/integration.cov",
+            "phpcov merge --clover build/clover.xml build/cov",
+            "php bin/coverage-check.php build/clover.xml 90"
+        ]
     }
 }

@@ -1,0 +1,20 @@
+services:
+  php:
+    build: ./docker/php
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      WP_TESTS_DB_HOST: mysql
+      WP_TESTS_DB_NAME: wordpress_test
+      WP_TESTS_DB_USER: root
+      WP_TESTS_DB_PASS: root
+    depends_on:
+      - mysql
+  mysql:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress_test
+    tmpfs:
+      - /var/lib/mysql

@@ -1,9 +1,14 @@
 /vendor/
 /node_modules/
-/composer.lock
 *.log
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 *.zip
+/build/
+/.phpunit.cache/
+/coverage/
+/playwright-report/
+/test-results/
+/.wp-env-home/
