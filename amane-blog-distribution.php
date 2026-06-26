@@ -4,7 +4,7 @@
  * Plugin Name: AMANE Blog Distribution
  * Plugin URI:  https://amane.app
  * Description: Pulls AI-generated blog articles from AMANE Blog Distribution API and publishes them as WordPress posts.
- * Version:     0.1.1
+ * Version:     0.1.2
  * Author:      AMANE
  * Author URI:  https://amane.app
  * License:     GPL-2.0-or-later
