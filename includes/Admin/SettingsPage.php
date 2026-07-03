@@ -130,7 +130,43 @@ class SettingsPage
                 <?php wp_nonce_field('amane_manual_sync'); ?>
                 <?php submit_button(__('今すぐ同期', 'amane-blog-dist'), 'secondary'); ?>
             </form>
+
+            <hr />
+
+            <h2><?php echo esc_html__('AI 提案の WordPress 自動適用', 'amane-blog-dist'); ?></h2>
+            <p class="description">
+                <?php echo esc_html__('AMANEA で採用した AI 提案の head 変更 (title / meta / canonical / OGP / JSON-LD) を、この WordPress に反映します。本文やレイアウトには触れません。', 'amane-blog-dist'); ?>
+            </p>
+            <?php $this->renderApplyNotice(); ?>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="amane_manual_apply" />
+                <?php wp_nonce_field('amane_manual_apply'); ?>
+                <?php submit_button(__('今すぐ適用', 'amane-blog-dist'), 'primary'); ?>
+            </form>
         </div>
         <?php
+    }
+
+    /** 「今すぐ適用」実行後のリダイレクトで付与された結果クエリを通知として描画する。 */
+    private function renderApplyNotice(): void
+    {
+        if (! isset($_GET['amane_apply'])) {
+            return;
+        }
+
+        $applied  = isset($_GET['applied']) ? (int) $_GET['applied'] : 0;
+        $failed   = isset($_GET['failed']) ? (int) $_GET['failed'] : 0;
+        $reverted = isset($_GET['reverted']) ? (int) $_GET['reverted'] : 0;
+
+        $message = sprintf(
+            /* translators: 1: applied, 2: reverted, 3: failed */
+            esc_html__('適用 %1$d 件 / 取消 %2$d 件 / 失敗 %3$d 件', 'amane-blog-dist'),
+            $applied,
+            $reverted,
+            $failed,
+        );
+        $class = $failed > 0 ? 'notice-warning' : 'notice-success';
+
+        printf('<div class="notice %s is-dismissible"><p>%s</p></div>', esc_attr($class), $message);
     }
 }

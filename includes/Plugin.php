@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Amane\WpPlugin;
 
 use Amane\WpPlugin\Admin\SettingsPage;
+use Amane\WpPlugin\Apply\ApplyRunner;
+use Amane\WpPlugin\Apply\HeadOutput;
+use Amane\WpPlugin\Apply\SeoPluginAdapter;
 use Amane\WpPlugin\Sdk\ClientFactory;
 use Amane\WpPlugin\Sync\ArticleSyncer;
 
@@ -12,14 +15,32 @@ class Plugin
 {
     private const CRON_HOOK = 'amane_sync_articles';
 
+    /** 自前 head postmeta。SEO プラグイン無しのとき HeadOutput が出力する。 */
+    private const HEAD_META_KEYS = [
+        '_amane_head_title',
+        '_amane_head_meta_description',
+        '_amane_head_canonical',
+        SeoPluginAdapter::META_OG,
+        SeoPluginAdapter::META_TWITTER,
+        SeoPluginAdapter::META_JSONLD,
+    ];
+
     private ClientFactory $clientFactory;
     private ?ArticleSyncer $syncer;
+    private ?ApplyRunner $applyRunner;
+    private HeadOutput $headOutput;
 
-    public function __construct(?ClientFactory $clientFactory = null, ?ArticleSyncer $syncer = null)
-    {
+    public function __construct(
+        ?ClientFactory $clientFactory = null,
+        ?ArticleSyncer $syncer = null,
+        ?ApplyRunner $applyRunner = null,
+        ?HeadOutput $headOutput = null
+    ) {
         $this->clientFactory = $clientFactory
             ?? apply_filters('amane_blog_client_factory', new ClientFactory());
         $this->syncer = $syncer;
+        $this->applyRunner = $applyRunner;
+        $this->headOutput = $headOutput ?? new HeadOutput();
     }
 
     public function register(): void
@@ -28,6 +49,11 @@ class Plugin
         add_action('admin_menu', [$this, 'addAdminMenu']);
         add_action(self::CRON_HOOK, [$this, 'runSync']);
         add_action('transition_post_status', [$this, 'onPostPublished'], 10, 3);
+
+        // WordPress 自動適用: 手動トリガ (管理画面ボタン) + 自前 head 出力
+        add_action('admin_post_amane_manual_apply', [$this, 'handleManualApply']);
+        add_action('wp_head', [$this->headOutput, 'render'], 20);
+        add_filter('document_title_parts', [$this->headOutput, 'filterTitleParts']);
     }
 
     public function registerPostMeta(): void
@@ -37,6 +63,59 @@ class Plugin
             'single'       => true,
             'type'         => 'string',
         ]);
+
+        foreach (self::HEAD_META_KEYS as $key) {
+            register_post_meta('post', $key, [
+                'show_in_rest' => false,
+                'single'       => true,
+                'type'         => 'string',
+            ]);
+        }
+    }
+
+    /** 「▶ 今すぐ適用」ボタン (admin-post) のハンドラ。 */
+    public function handleManualApply(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die(esc_html__('権限がありません。', 'amane-blog-dist'));
+        }
+        check_admin_referer('amane_manual_apply');
+
+        $result = $this->runApply();
+
+        $redirect = add_query_arg(
+            [
+                'page'         => 'amane-blog-dist',
+                'amane_apply'  => '1',
+                'applied'      => $result->applied,
+                'failed'       => $result->failed,
+                'reverted'     => $result->reverted,
+            ],
+            admin_url('options-general.php'),
+        );
+        wp_safe_redirect($redirect);
+        exit;
+    }
+
+    /** queued / revert_requested ジョブを pull して適用/取消する。 */
+    public function runApply(): \Amane\WpPlugin\Apply\ApplyResult
+    {
+        $runner = $this->applyRunner ?? new ApplyRunner();
+        $result = $runner->run();
+
+        error_log(sprintf(
+            'AMANE apply: applied=%d failed=%d reverted=%d errors=%d',
+            $result->applied,
+            $result->failed,
+            $result->reverted,
+            count($result->errors),
+        ));
+
+        foreach ($result->errors as $error) {
+            error_log('AMANE apply error: ' . $error);
+        }
+
+        return $result;
     }
 
     public function addAdminMenu(): void
