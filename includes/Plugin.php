@@ -8,6 +8,7 @@ use Amane\WpPlugin\Admin\SettingsPage;
 use Amane\WpPlugin\Apply\ApplyRunner;
 use Amane\WpPlugin\Apply\HeadOutput;
 use Amane\WpPlugin\Apply\SeoPluginAdapter;
+use Amane\WpPlugin\Beacon\SectionBeacon;
 use Amane\WpPlugin\Sdk\ClientFactory;
 use Amane\WpPlugin\Sync\ArticleSyncer;
 
@@ -29,18 +30,21 @@ class Plugin
     private ?ArticleSyncer $syncer;
     private ?ApplyRunner $applyRunner;
     private HeadOutput $headOutput;
+    private SectionBeacon $sectionBeacon;
 
     public function __construct(
         ?ClientFactory $clientFactory = null,
         ?ArticleSyncer $syncer = null,
         ?ApplyRunner $applyRunner = null,
-        ?HeadOutput $headOutput = null
+        ?HeadOutput $headOutput = null,
+        ?SectionBeacon $sectionBeacon = null
     ) {
         $this->clientFactory = $clientFactory
             ?? apply_filters('amane_blog_client_factory', new ClientFactory());
         $this->syncer = $syncer;
         $this->applyRunner = $applyRunner;
         $this->headOutput = $headOutput ?? new HeadOutput();
+        $this->sectionBeacon = $sectionBeacon ?? new SectionBeacon();
     }
 
     public function register(): void
@@ -54,6 +58,9 @@ class Plugin
         add_action('admin_post_amane_manual_apply', [$this, 'handleManualApply']);
         add_action('wp_head', [$this->headOutput, 'render'], 20);
         add_filter('document_title_parts', [$this->headOutput, 'filterTitleParts']);
+
+        // セクション到達 beacon: gtag より後に出したいので wp_footer の遅い優先度で出力する
+        add_action('wp_footer', [$this->sectionBeacon, 'render'], 99);
     }
 
     public function registerPostMeta(): void

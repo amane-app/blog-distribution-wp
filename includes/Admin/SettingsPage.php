@@ -4,10 +4,20 @@ declare(strict_types=1);
 
 namespace Amane\WpPlugin\Admin;
 
+use Amane\WpPlugin\Beacon\GtagDetector;
+use Amane\WpPlugin\Beacon\SectionBeacon;
+
 class SettingsPage
 {
     private const OPTION_GROUP = 'amane_blog_dist';
     private const PAGE_SLUG    = 'amane-blog-dist';
+
+    private GtagDetector $gtagDetector;
+
+    public function __construct(?GtagDetector $gtagDetector = null)
+    {
+        $this->gtagDetector = $gtagDetector ?? new GtagDetector();
+    }
 
     public function register(): void
     {
@@ -100,6 +110,96 @@ class SettingsPage
             self::PAGE_SLUG,
             'amane_sync_section',
         );
+
+        $this->registerBeaconSettings();
+    }
+
+    /**
+     * セクション到達 beacon の設定 (2026-07-20)。
+     *
+     * 有効にすると、記事の H2 が読者の画面に入った時点で **このサイト自身の GA4** に
+     * イベントを送る。AMANEA はそれを読み取って「どのセクションで離脱したか」を表示する。
+     * 既定 OFF (= 顧客が明示的に有効化する)。
+     */
+    private function registerBeaconSettings(): void
+    {
+        add_settings_section(
+            'amane_beacon_section',
+            __('セクション離脱の計測', 'amane-blog-dist'),
+            function (): void {
+                echo '<p class="description">'
+                    . esc_html__(
+                        '記事の見出し（H2）がどこまで読まれたかを計測します。データはこのサイト自身の Google アナリティクスに記録され、AMANEA がそれを読み取って表示します。',
+                        'amane-blog-dist'
+                    )
+                    . '</p>';
+            },
+            self::PAGE_SLUG,
+        );
+
+        register_setting(self::OPTION_GROUP, SectionBeacon::OPTION_ENABLED, ['type' => 'boolean']);
+        add_settings_field(
+            SectionBeacon::OPTION_ENABLED,
+            __('セクション離脱を計測する', 'amane-blog-dist'),
+            function (): void {
+                $checked = checked(1, get_option(SectionBeacon::OPTION_ENABLED, 0), false);
+                $name = esc_attr(SectionBeacon::OPTION_ENABLED);
+                echo "<input type='checkbox' name='{$name}' value='1' {$checked} />";
+                echo "<span class='description'> "
+                    . esc_html__('H2 が 2 個以上ある記事で計測します', 'amane-blog-dist')
+                    . '</span>';
+                $this->renderGtagStatus();
+            },
+            self::PAGE_SLUG,
+            'amane_beacon_section',
+        );
+    }
+
+    /**
+     * gtag.js の検出結果を出す。
+     *
+     * beacon は window.gtag が無いと何もせず終わるため、顧客からは「有効にしたのに
+     * データが来ない」としか見えない。原因を先回りして示す。
+     */
+    private function renderGtagStatus(): void
+    {
+        $result = $this->gtagDetector->detect();
+        $status = $result['status'] ?? GtagDetector::STATUS_UNKNOWN;
+
+        if ($status === GtagDetector::STATUS_OK) {
+            $ids = implode(', ', array_map('esc_html', $result['measurement_ids'] ?? []));
+            echo '<p style="color:#116329;margin-top:8px;">'
+                . esc_html__('✓ Google アナリティクス（gtag.js）を検出しました', 'amane-blog-dist')
+                . ' <code>' . $ids . '</code></p>';
+
+            return;
+        }
+
+        if ($status === GtagDetector::STATUS_GTM_ONLY) {
+            echo '<p style="color:#8a6100;margin-top:8px;">'
+                . esc_html__(
+                    '⚠ Google タグマネージャーのみを検出しました。構成によっては計測できない場合があります（gtag.js が必要です）。有効化後にデータが届かない場合はご連絡ください。',
+                    'amane-blog-dist'
+                )
+                . '</p>';
+
+            return;
+        }
+
+        if ($status === GtagDetector::STATUS_NONE) {
+            echo '<p style="color:#8a2424;margin-top:8px;">'
+                . esc_html__(
+                    '⚠ Google アナリティクス（gtag.js）が見つかりませんでした。この状態では計測できません。先に GA4 を設置してください。',
+                    'amane-blog-dist'
+                )
+                . '</p>';
+
+            return;
+        }
+
+        echo '<p style="color:#666;margin-top:8px;">'
+            . esc_html__('（サイトの状態を確認できませんでした。時間をおいて再度お試しください）', 'amane-blog-dist')
+            . '</p>';
     }
 
     public function render(): void

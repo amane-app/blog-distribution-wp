@@ -28,10 +28,17 @@ final class SettingsPageTest extends TestCase
 
         Functions\when('__')->returnArg(1);
         Functions\when('esc_html__')->returnArg(1);
+        Functions\when('esc_html')->returnArg(1);
         Functions\when('esc_attr')->returnArg(1);
         Functions\when('esc_url')->returnArg(1);
         Functions\when('add_settings_section')->justReturn(null);
         Functions\when('checked')->justReturn("checked='checked'");
+        // セクション離脱の設定フィールドが gtag 検出を呼ぶ。キャッシュ済みを返して
+        // テスト中に HTTP を叩かせない (検出そのものは GtagDetectorTest で検証)。
+        Functions\when('get_transient')->justReturn([
+            'status' => \Amane\WpPlugin\Beacon\GtagDetector::STATUS_OK,
+            'measurement_ids' => ['G-TEST1234'],
+        ]);
 
         Functions\when('register_setting')->alias(function ($group, $name, $args = []): void {
             if (isset($args['sanitize_callback'])) {
