@@ -24,10 +24,13 @@ final class SectionBeacon
     public const OPTION_ENABLED = 'amane_section_beacon_enabled';
 
     /**
-     * 追跡する H2 の上限。AMANEA 側 PageImplementationExtractor::MAX_H2_COUNT と揃える。
-     * ここがズレると section_index → 見出しテキストの解決が合わなくなる。
+     * 追跡する H2 の上限。**AMANEA 側の config('section_engagement.max_sections') と揃える**。
+     * ここがズレると、超過分が取り込み時に捨てられる (= 送信が無駄になる)。
+     *
+     * 2026-07-21 に 10 → 20 へ引き上げ。本番実測で LP のトップページは h2 が 14 個あり、
+     * 上限 10 では料金セクション (12 番目) が計測できていなかった。
      */
-    private const MAX_SECTIONS = 10;
+    private const MAX_SECTIONS = 20;
 
     public function isEnabled(): bool
     {
